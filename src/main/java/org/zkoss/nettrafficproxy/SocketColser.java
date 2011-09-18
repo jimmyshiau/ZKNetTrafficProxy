@@ -14,15 +14,14 @@ public class SocketColser {
 	}
 
 	public void doClose() throws IOException {
-//		synchronized (this) {
+		synchronized (this) {
 			if (--count == 0) {
 				if (incoming != null)
 					incoming.close();
 				if (outgoing != null)
 					outgoing.close();
 			}
-//		}
-
+		}
 	}
 
 }
