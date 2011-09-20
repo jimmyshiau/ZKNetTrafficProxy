@@ -65,25 +65,24 @@ public class ProxyServer extends Observable {
 //									msgHdl, dataFolder).start();
 							
 								
-								
-							File dir = Utils.createFolder(dataFolder, 
-									new DecimalFormat("0000").format(id++));
+							String dirName = new DecimalFormat("0000").format(id++);
+							File dir = Utils.createFolder(dataFolder, dirName);
 							
 								
 							webServer = new Socket(host, port);
-							SocketColser closer = new SocketColser(browser, webServer);
+							SocketHandler sckHdler = new SocketHandler(dirName, browser, webServer);
 							
 							HTTPRequestProcessor reqProc = new HTTPRequestProcessor(
 									browser.getInputStream(), 
 									webServer.getOutputStream(), 
-									dir, closer);
+									dir, sckHdler);
 							addObserver(reqProc);
 							reqProc.start();
 							
 							HTTPResponseProcessor respProc = new HTTPResponseProcessor(
 									webServer.getInputStream(),
 									browser.getOutputStream(), 
-									dir, closer);
+									dir, sckHdler);
 							addObserver(respProc);
 							respProc.start();
 						}

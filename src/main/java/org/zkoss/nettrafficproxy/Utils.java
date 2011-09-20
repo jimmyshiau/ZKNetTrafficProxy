@@ -39,11 +39,10 @@ public class Utils {
 				new ByteArrayInputStream(data)));
 	}
 
-	public static byte[] getSubBytes(byte[] source, int srcBegin) {
+	public static byte[] getSubBytes(byte[] source, int srcBegin, int len) {
 		int srcEnd = source.length;
-		int newLen = srcEnd - srcBegin;
-		byte destination[] = new byte[newLen];
-		System.arraycopy(source, srcBegin, destination, 0, newLen);
+		byte destination[] = new byte[len];
+		System.arraycopy(source, srcBegin, destination, 0, len);
 
 		return destination;
 	}

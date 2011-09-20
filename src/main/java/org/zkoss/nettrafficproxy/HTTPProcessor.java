@@ -21,6 +21,7 @@ import org.apache.commons.lang.StringUtils;
 
 public class HTTPProcessor extends Thread implements Observer {
 
+	private int index = 0;
 	
 	protected File dataFolder;
 	protected String type;
@@ -29,8 +30,7 @@ public class HTTPProcessor extends Thread implements Observer {
 	
 	private InputStream in;
 	private OutputStream out;
-//	private byte[] buffer;
-	private SocketColser closer;
+	protected SocketHandler sckHdler;
 	private MessageHandler msgHdl;
 	
 	protected Map<String, String> infos = new HashMap<String, String>();
@@ -42,14 +42,14 @@ public class HTTPProcessor extends Thread implements Observer {
 	private boolean stop = false;
 
 	public HTTPProcessor(String type, int bufferSize, InputStream in, OutputStream out,
-			File dataFolder, SocketColser closer)
+			File dataFolder, SocketHandler sckHdler)
 			throws IOException {
 		super();
 		this.type = type;
 		this.bufferSize = bufferSize;
 		this.in = in;
 		this.out = out;
-		this.closer = closer;
+		this.sckHdler = sckHdler;
 		this.dataFolder = dataFolder;
 		this.msgHdl = MessageHandler.getInstance();
 //		buffer = new byte[4096];
@@ -57,98 +57,8 @@ public class HTTPProcessor extends Thread implements Observer {
 
 	public void run() {
 		try {
-			
 			byte[] data = writeByte();
-			String header = getHeader(data);
-			writeHeader(header);
-			
-//			System.out.println("=========== "+type+" ============"+dataFolder.getName());
-//			System.out.println(header);
-			
-			
-			
-			
-			if (len > 0) {
-				writeContent(Utils.getSubBytes(
-						data, header.getBytes().length));
-			}
-			
-			
-//			synchronized (msgHdl) {
-//				System.out.println("=========== "+type+" start ============");
-//				System.out.println(header);
-//				System.out.println("=========== "+type+" end ============");
-//				
-//			}
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-//			BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-//			String line;
-//			while ((line = reader.readLine()) != null) {
-//				out.write(line.getBytes());
-//				if (line.length() == 0)
-//					break;
-//			}
-//			
-//			int bytesRead;
-//			byte[] buffer = new byte[1024];
-//			while ((bytesRead = reader.read(buffer)) > 0) {
-//				out.write(buffer, 0, bytesRead);
-//			}
-			
-			
-//			int bytesRead;
-//			byte[] buffer = new byte[1024];
-//			boolean isHeader = true;
-//			OutputStream outFile = null;
-//			int i = 0;
-//			while ((bytesRead = in.read(buffer)) > 0) {
-//				out.write(buffer, 0, bytesRead);
-//				
-//				System.out.println(len);
-//				if (isHeader) {
-////					String header = new String(buffer);
-//					
-//					
-//					
-//					outFile = parseHeader(buffer, i++);
-//					isHeader = outFile == null; 
-//					
-//				} else if (len > 0) {
-//					outFile.write(buffer);
-//					
-//					System.out.println(type+" len: " + len);
-//					if ((len -= bytesRead) <= 0) {
-//						System.out.println("end: " + len);
-//						isHeader = true;
-//					} 
-//				} 
-				
-				
-				
-				
-				
-				
-				
-//				if (!process(new String(buffer)))
-//					break;
-				
-//				process(new String(buffer));
-//				process(buffer, 0, bytesRead);
-//				bytesRead = in.read(buffer);
-//				System.out.println(bytesRead+"\t"+this+"\t"+type);
-//			}
+			storeByte(data);
 			
 		} catch (SocketException e) {
 			// ignore socket closed
@@ -158,14 +68,32 @@ public class HTTPProcessor extends Thread implements Observer {
 			doFinally();
 		}
 	}
+
+	protected void writeContent(int index, byte[] data) throws IOException {
+	}
 	
-	protected void writeContent(byte[] data) throws IOException {
-		
+	private void storeByte(byte[] data) throws NumberFormatException, IOException {
+		len = 0;
+		String header = getHeader(data);
+		writeHeader(index, header);
+		if (len > 0) {
+			System.out.println(len);
+			int totalLen = data.length;
+			int headerLen = header.getBytes().length;
+			writeContent(index, Utils.getSubBytes(data, headerLen, len));
+			
+			int remain = totalLen - headerLen - len;
+			
+			if (remain > 0) {
+				index++;
+				storeByte(Utils.getSubBytes(data, headerLen+len, remain));
+			}
+		}
 	}
 
-	private void writeHeader(String header) throws IOException {
+	private void writeHeader(int index, String header) throws IOException {
 		FileUtils.writeStringToFile(
-				new File(dataFolder, type), header, "UTF-8");
+				new File(dataFolder, type + index), header, "UTF-8");
 
 	}
 
@@ -196,8 +124,6 @@ public class HTTPProcessor extends Thread implements Observer {
 		
 		return sb.toString();
 	}
-
-	
 
 	
 	protected void parseHeader(String line) {
@@ -231,7 +157,6 @@ public class HTTPProcessor extends Thread implements Observer {
 		
 		
 //		outFile.write(reader.read());
-		System.out.println();
 		
 		return outFile;
 		
@@ -258,8 +183,7 @@ public class HTTPProcessor extends Thread implements Observer {
 
 	protected void doFinally() {
 		try {
-			System.out.println("doFinally");
-			closer.doClose(in, out);
+			sckHdler.doClose(in, out, msgHdl);
 		} catch (IOException e) {
 			msgHdl.printStackTrace(e);
 		}

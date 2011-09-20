@@ -17,7 +17,7 @@ public class HTTPResponseProcessor extends HTTPProcessor {
 	private String cntEncoding;
 	
 	public HTTPResponseProcessor(InputStream in, OutputStream out,
-			File parentFolder, SocketColser closer) throws IOException {
+			File parentFolder, SocketHandler closer) throws IOException {
 		super("Response", 4096, in, out, parentFolder, closer);
 	}
 
@@ -27,8 +27,11 @@ public class HTTPResponseProcessor extends HTTPProcessor {
 
 		if (line.startsWith("Content-Type:")) {
 			String value = line.split(" ")[1];
+			System.out.println(value);
 			contentType = value.split(";")[0];
-			charset = value.split("=")[1];
+			String[] v = value.split("=");
+			if (v.length > 2)
+				charset = value.split("=")[1];
 		} else if (line.startsWith("Content-Encoding:")) {
 			cntEncoding = line.split(" ")[1];
 		}
@@ -36,21 +39,27 @@ public class HTTPResponseProcessor extends HTTPProcessor {
 
 	
 	@Override
-	protected void writeContent(byte[] data) throws IOException {
-		super.writeContent(data);
+	protected void writeContent(int index, byte[] data) throws IOException {
+		super.writeContent(index, data);
 		
 		
-		System.out.println("cntEncoding:" +cntEncoding);
 		if (charset == null)
 			charset = "UTF-8";
+		String fileName = sckHdler.getResourceName();
+		
+		if ("text/plain".equals(contentType))
+			fileName = type+index+"AuCmd";
+		else if (fileName == null)
+			fileName = type+index+"Cnt";
 		
 		
 		if ("gzip".equals(cntEncoding)) {
 			GZIPInputStream fin = new GZIPInputStream(new ByteArrayInputStream(data));
 			
-			FileUtils.copyInputStreamToFile(fin, new File(dataFolder, type+"Cnt"));
+			FileUtils.copyInputStreamToFile(fin, new File(dataFolder, fileName));
+			cntEncoding = null;
 		} else
-			FileUtils.writeByteArrayToFile(new File(dataFolder, type+"Cnt"), data);
+			FileUtils.writeByteArrayToFile(new File(dataFolder, fileName), data);
 		
 	}
 
