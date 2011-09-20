@@ -5,49 +5,41 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+
 public class HTTPRequestProcessor extends HTTPProcessor {
+
+	private String resourceUrl;
+	private String browserLanguage;
+	private String charset;
 
 	public HTTPRequestProcessor(InputStream in, OutputStream out,
 			File parentFolder, SocketColser closer) throws IOException {
-		super("Request", in, out, parentFolder, closer);
+		super("Request", 1024, in, out, parentFolder, closer);
 	}
-
 	
-
+	@Override
+	protected void parseHeader(String line) {
+		super.parseHeader(line);
+		
+		if (line.startsWith("GET"))
+			resourceUrl = String.valueOf(line.split(" ")[1]);
+		else if (line.startsWith("Accept-Language:"))
+			browserLanguage = line.split(" ")[1].split(",")[0];
+		else if (line.startsWith("Accept-Charset"))
+			charset = line.split(" ")[1].split(",")[0];
+		
+	}
 	
+	@Override
+	protected void writeContent(byte[] data) throws IOException {
+		super.writeContent(data);
+		System.out.println("charset:" +charset);
+		if (charset == null)
+			charset = "UTF-8";
+		FileUtils.writeByteArrayToFile(new File(dataFolder, type+"Cnt"), data);
+		
+	}
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	// public HTTPRequestProcessor(int id, InputStream in, OutputStream out,
-	// File parentFolder, SocketColser closer, MessageHandler msgHdl)
-	// throws IOException {
-	// super(id, in, out, parentFolder, closer, msgHdl);
-	// // TODO Auto-generated constructor stub
-	// }
-
-	// @Override
-	// protected boolean process(String content) {
-	// super.process(content);
-	//
-	//
-	// if (content.startsWith("GET"))
-	// infos.put("url", String.valueOf(content.split(" ")[1]));
-	// else if (content.startsWith("Accept-Language:"))
-	// infos.put("accept-Language", content.split(" ")[1].split(",")[0]);
-	// else if (content.startsWith("Accept-Charset"))
-	// infos.put("charset", content.split(" ")[1].split(",")[0]);
-	//
-	//
-	// return true;
-	// }
-
 }
