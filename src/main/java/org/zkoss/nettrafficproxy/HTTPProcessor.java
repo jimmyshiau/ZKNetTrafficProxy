@@ -73,28 +73,28 @@ public class HTTPProcessor extends Thread implements Observer {
 	}
 	
 	private void storeByte(byte[] data) throws NumberFormatException, IOException {
+		index++;
 		len = 0;
-		String header = getHeader(data);
-		writeHeader(index, header);
+		String header = writeHeader(index, getHeader(data));
+		
+		int totalLen = data.length;
+		int headerLen = header.getBytes().length;
+		
 		if (len > 0) {
-			System.out.println(len);
-			int totalLen = data.length;
-			int headerLen = header.getBytes().length;
 			writeContent(index, Utils.getSubBytes(data, headerLen, len));
 			
 			int remain = totalLen - headerLen - len;
 			
-			if (remain > 0) {
-				index++;
+			if (remain > 0)
 				storeByte(Utils.getSubBytes(data, headerLen+len, remain));
-			}
-		}
+		} else if (totalLen > headerLen)
+			storeByte(Utils.getSubBytes(data, headerLen, totalLen - headerLen));
 	}
 
-	private void writeHeader(int index, String header) throws IOException {
+	private String writeHeader(int index, String header) throws IOException {
 		FileUtils.writeStringToFile(
 				new File(dataFolder, type + index), header, "UTF-8");
-
+		return header;
 	}
 
 	private byte[] writeByte() throws IOException {

@@ -27,7 +27,6 @@ public class HTTPResponseProcessor extends HTTPProcessor {
 
 		if (line.startsWith("Content-Type:")) {
 			String value = line.split(" ")[1];
-			System.out.println(value);
 			contentType = value.split(";")[0];
 			String[] v = value.split("=");
 			if (v.length > 2)
