@@ -12,7 +12,7 @@ import org.apache.commons.io.FileUtils;
 
 public class Utils {
 
-	public static File createFolder1(String dirName) throws IOException {
+	public static File createFolder(String dirName) throws IOException {
 		File file = new File(dirName);
 		if (file.exists())
 			FileUtils.cleanDirectory(file);
